@@ -1,0 +1,43 @@
+---
+- name: Configure SSH
+  hosts: localhost
+  become: yes
+  gather_facts: false
+  vars_prompt:
+    - name: "jump_host"
+      prompt: "Enter the jump host IP address:"
+      private: no
+    - name: "jump_port"
+      prompt: "Enter the jump host SSH port:"
+      private: no
+    - name: "jump_user"
+      prompt: "Enter the jump host username:"
+      private: no
+    - name: "target_host"
+      prompt: "Enter the target host IP address:"
+      private: no
+    - name: "target_port"
+      prompt: "Enter the target host SSH port:"
+      private: no
+    - name: "target_user"
+      prompt: "Enter the target host username:"
+      private: no
+
+  tasks:
+    - name: Move RSA key to ~/.ssh/
+      command: mv ~/Downloads/rht_classroom.rsa ~/.ssh/
+      args:
+        chdir: "~/.ssh/"
+
+    - name: Set permissions for RSA key
+      command: chmod 600 ~/.ssh/rht_classroom.rsa
+
+    - name: Add RSA key to SSH agent
+      command: ssh-add ~/.ssh/rht_classroom.rsa
+
+    - name: Add jump host to known hosts
+      command: ssh-keyscan -p {{ jump_port }} {{ jump_host }} >> ~/.ssh/known_hosts
+
+    - name: SSH to target host through jump host
+      command: ssh -i ~/.ssh/rht_classroom.rsa -J {{ jump_user }}@{{ jump_host }}:{{ jump_port }} {{ target_user }}@{{ target_host }} -p {{ target_port }}
+
